@@ -42,6 +42,7 @@ htmlcov/
 # Worktrees & local Aether runtime state
 .worktrees/
 .aether/
+.tools/
 *.sqlite
 *.sqlite-journal
 

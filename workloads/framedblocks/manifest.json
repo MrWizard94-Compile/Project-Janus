@@ -1,0 +1,8 @@
+{
+  "id": "framedblocks",
+  "description": "FramedBlocks mass mixin E2E",
+  "repository": null,
+  "branch": "main",
+  "validation_profile": "neoforge-mixin-v1",
+  "clone_path": "repo"
+}

@@ -1,6 +1,8 @@
 import { join } from "node:path";
 
 export const AETHER_DIR = ".aether";
+export const TOOLS_DIR = ".tools";
+export const WORKLOADS_DIR = "workloads";
 export const TASKS_FILE = "tasks.json";
 export const WORKTREES_DIR = ".worktrees";
 
@@ -43,4 +45,20 @@ export function resolveReceiptPath(repoRoot: string, taskId: string): string {
 
 export function resolveWorktreePath(repoRoot: string, worktreeName: string): string {
   return join(resolveWorktreesDir(repoRoot), worktreeName);
+}
+
+export function resolveToolsDir(repoRoot: string): string {
+  return join(repoRoot, TOOLS_DIR);
+}
+
+export function resolveJdtlsDir(repoRoot: string): string {
+  return join(resolveToolsDir(repoRoot), "jdtls");
+}
+
+export function resolveWorkloadsDir(repoRoot: string): string {
+  return join(repoRoot, WORKLOADS_DIR);
+}
+
+export function resolveWorkloadDir(repoRoot: string, workloadId: string): string {
+  return join(resolveWorkloadsDir(repoRoot), workloadId);
 }

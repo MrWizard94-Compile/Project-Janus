@@ -1,6 +1,10 @@
 {
   "assignee": "grok",
-  "context_refs": ["arch:framedblocks-mixin-pattern"],
+  "context_refs": [
+    "arch:framedblocks-mixin-pattern",
+    "doc:handoff-protocol",
+    "ref:validation-rules"
+  ],
   "validation_profile": "neoforge-mixin-v1",
   "spec": {
     "objective": "Convert target mixin class to NeoForge-compatible injection pattern",

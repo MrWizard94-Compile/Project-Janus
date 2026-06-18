@@ -6,10 +6,5 @@
   },
   "include": ["src/**/*.ts"],
   "exclude": ["src/**/*.test.ts"],
-  "references": [
-    { "path": "../shared" },
-    { "path": "../task-queue" },
-    { "path": "../workload-manager" },
-    { "path": "../worktree-manager" }
-  ]
+  "references": [{ "path": "../shared" }]
 }

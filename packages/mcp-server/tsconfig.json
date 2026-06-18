@@ -9,8 +9,6 @@
     { "path": "../context" },
     { "path": "../shared" },
     { "path": "../task-queue" },
-    { "path": "../validation-kernel" },
-    { "path": "../workload-manager" },
     { "path": "../worktree-manager" }
   ]
 }

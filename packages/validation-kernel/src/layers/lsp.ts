@@ -3,6 +3,7 @@ import { readdir } from "node:fs/promises";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import type { AetherConfig, PatchProposal, ValidationError } from "@aether/shared";
+import { resolveJdtlsConfigDir } from "@aether/workload-manager";
 import {
   createProtocolConnection,
   DiagnosticSeverity,
@@ -88,7 +89,7 @@ async function collectJdtDiagnostics(
     config.jdtls?.workspace_data_dir ??
     join(config.jdtls?.home ?? "", "data", "aether-workspace");
 
-  const configDir = join(config.jdtls?.home ?? "", "config_win");
+  const configDir = resolveJdtlsConfigDir(config.jdtls?.home ?? "");
   const args = [
     "-Declipse.application=org.eclipse.jdt.ls.core.id1",
     "-Dosgi.bundles.defaultStartLevel=4",

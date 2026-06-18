@@ -8,7 +8,19 @@ Target LSP backend for the Aether Validation Kernel (Phase 0 layer 1).
 - Eclipse project page: https://projects.eclipse.org/projects/eclipse.jdt.ls
 - Red Hat vscode-java (ships JDT.LS): https://github.com/redhat-developer/vscode-java
 
-## Integration approach (planned PR-4)
+## Bootstrap (Windows / cross-platform)
+
+```powershell
+pnpm aether setup jdtls
+# or
+./scripts/setup-jdtls.ps1
+```
+
+This downloads the latest JDT.LS snapshot from `download.eclipse.org`, extracts it to `.tools/jdtls/`, and writes `.aether/config.json`.
+
+Requires JDK 21+ available as `java` on PATH (override with `--java`).
+
+## Integration approach
 
 1. Spawn or attach to a JDT.LS instance with workspace rooted at the task worktree.
 2. Open proposed Java files from patch proposals before apply.

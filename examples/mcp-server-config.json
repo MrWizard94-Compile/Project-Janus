@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "aether": {
+      "command": "node",
+      "args": [
+        "packages/mcp-server/dist/bin.js"
+      ],
+      "env": {
+        "AETHER_REPO_ROOT": "C:/Users/Bulkl/OneDrive/Desktop/Project Janus",
+        "AETHER_TASK_ID": "REPLACE_WITH_TASK_ID"
+      }
+    }
+  }
+}

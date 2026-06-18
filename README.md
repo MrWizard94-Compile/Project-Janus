@@ -4,7 +4,7 @@ Dual-AI development platform (**Aether**) — Claude orchestrates, Grok executes
 
 ## Status
 
-Phase 0 (Foundation) — task queue, worktree manager, validation kernel, and patch handoff landed.
+Phase 0 (Foundation) — validation kernel, MCP server, workload manager, and JDT.LS bootstrap landed.
 
 ## Requirements
 
@@ -27,12 +27,16 @@ pnpm aether task create -f examples/task-sample.json
 pnpm aether task list
 pnpm aether worktree create -t <task-id>
 pnpm aether patch submit -f examples/patch-mixin-valid.json
+pnpm aether setup jdtls
+pnpm aether workload init framedblocks -d "FramedBlocks mass mixin E2E"
 pnpm aether patch submit -f examples/patch-mixin-valid.json --apply
 ```
 
-Task state is stored in `.aether/tasks.json`. Worktrees live under `.worktrees/`. Validation receipts live in `.aether/receipts/`.
+Task state is stored in `.aether/tasks.json`. Worktrees live under `.worktrees/`. Validation receipts live in `.aether/receipts/`. JDT.LS installs to `.tools/jdtls/`.
 
-Copy `examples/aether-config.example.json` to `.aether/config.json` when JDT.LS Java validation is required.
+### MCP server (task-scoped)
+
+Set `AETHER_TASK_ID` and run `packages/mcp-server/dist/bin.js` via stdio. See `examples/mcp-server-config.json`.
 
 ## Packages
 
@@ -42,6 +46,9 @@ Copy `examples/aether-config.example.json` to `.aether/config.json` when JDT.LS 
 | `@aether/task-queue` | JSON-backed structured task queue |
 | `@aether/worktree-manager` | Git worktree lifecycle per task |
 | `@aether/validation-kernel` | LSP, AST, rules, build layers + patch gate |
+| `@aether/context` | Context ref resolver for scoped agent input |
+| `@aether/workload-manager` | Workload manifests, clone, JDT.LS bootstrap |
+| `@aether/mcp-server` | Task-scoped MCP resources over stdio |
 | `@aether/cli` | Unified `aether` command |
 
 ## Key documents

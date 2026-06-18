@@ -1,8 +1,10 @@
 import { readFile } from "node:fs/promises";
 import { Command } from "commander";
 import { AssigneeSchema, PatchProposalSchema, TaskStatusSchema } from "@aether/shared";
+import { ContextResolver } from "@aether/context";
 import { TaskQueue } from "@aether/task-queue";
 import { HandoffService } from "@aether/validation-kernel";
+import { setupJdtls, WorkloadManager } from "@aether/workload-manager";
 import { WorktreeManager } from "@aether/worktree-manager";
 import { findRepoRoot } from "./repo.js";
 
@@ -26,7 +28,7 @@ export function buildProgram(): Command {
   program
     .name("aether")
     .description("Aether Phase 0 CLI — task queue, validation gate, and worktrees")
-    .version("0.2.0");
+    .version("0.3.0");
 
   const task = program.command("task").description("Manage structured tasks");
 
@@ -136,6 +138,110 @@ export function buildProgram(): Command {
       await manager.destroy(options.task);
       const updated = await queue.setWorktree(options.task, null);
       console.log(JSON.stringify(updated, null, 2));
+    });
+
+  const setup = program.command("setup").description("Bootstrap Aether dependencies");
+
+  setup
+    .command("jdtls")
+    .description("Download and configure Eclipse JDT.LS for Java validation")
+    .option("--java <path>", "Java executable path", "java")
+    .action(async (options: { java: string }) => {
+      const repoRoot = await findRepoRoot(process.cwd());
+      const result = await setupJdtls(repoRoot, options.java);
+      console.log(JSON.stringify(result, null, 2));
+    });
+
+  const workload = program.command("workload").description("Manage external workload repositories");
+
+  workload
+    .command("init")
+    .description("Create a workload manifest")
+    .argument("<id>", "Workload identifier")
+    .requiredOption("-d, --description <text>", "Workload description")
+    .option("--url <repository>", "Git repository URL")
+    .option("-b, --branch <branch>", "Default branch", "main")
+    .option("-p, --profile <id>", "Validation profile", "neoforge-mixin-v1")
+    .action(async (id: string, options: { description: string; url?: string; branch: string; profile: string }) => {
+      const repoRoot = await findRepoRoot(process.cwd());
+      const manager = new WorkloadManager(repoRoot);
+      const manifest = await manager.init({
+        id,
+        description: options.description,
+        repository: options.url ?? null,
+        branch: options.branch,
+        validation_profile: options.profile,
+      });
+      console.log(JSON.stringify(manifest, null, 2));
+    });
+
+  workload
+    .command("set-url")
+    .description("Set or update workload repository URL")
+    .argument("<id>", "Workload identifier")
+    .requiredOption("--url <repository>", "Git repository URL")
+    .option("-b, --branch <branch>", "Default branch", "main")
+    .action(async (id: string, options: { url: string; branch: string }) => {
+      const repoRoot = await findRepoRoot(process.cwd());
+      const manager = new WorkloadManager(repoRoot);
+      const manifest = await manager.setRepository(id, options.url, options.branch);
+      console.log(JSON.stringify(manifest, null, 2));
+    });
+
+  workload
+    .command("list")
+    .description("List workload manifests")
+    .action(async () => {
+      const repoRoot = await findRepoRoot(process.cwd());
+      const manager = new WorkloadManager(repoRoot);
+      const manifests = await manager.list();
+      console.log(JSON.stringify(manifests, null, 2));
+    });
+
+  workload
+    .command("clone")
+    .description("Clone or update a workload repository")
+    .argument("<id>", "Workload identifier")
+    .action(async (id: string) => {
+      const repoRoot = await findRepoRoot(process.cwd());
+      const manager = new WorkloadManager(repoRoot);
+      const result = await manager.clone(id);
+      console.log(JSON.stringify(result, null, 2));
+    });
+
+  const context = program.command("context").description("Resolve task context references");
+
+  context
+    .command("resolve")
+    .description("Resolve context refs to markdown documents")
+    .option("-t, --task <taskId>", "Resolve refs from a task")
+    .option("-r, --refs <refs>", "Comma-separated context refs")
+    .action(async (options: { task?: string; refs?: string }) => {
+      const repoRoot = await findRepoRoot(process.cwd());
+      const resolver = new ContextResolver(repoRoot);
+
+      let refs: string[] = [];
+      if (options.task) {
+        const queue = new TaskQueue(repoRoot);
+        const task = await queue.get(options.task);
+        refs = task.context_refs;
+      } else if (options.refs) {
+        refs = options.refs.split(",").map((ref) => ref.trim()).filter((ref) => ref.length > 0);
+      } else {
+        throw new Error("Provide --task or --refs");
+      }
+
+      const bundle = await resolver.resolve(refs);
+      console.log(JSON.stringify(bundle, null, 2));
+    });
+
+  context
+    .command("catalog")
+    .description("List known context references")
+    .action(async () => {
+      const repoRoot = await findRepoRoot(process.cwd());
+      const resolver = new ContextResolver(repoRoot);
+      console.log(JSON.stringify(resolver.listCatalog(), null, 2));
     });
 
   const patch = program.command("patch").description("Submit and apply validated patches");
