@@ -4,7 +4,41 @@ Dual-AI development platform (**Aether**) — Claude orchestrates, Grok executes
 
 ## Status
 
-Phase 0 (Foundation) — in progress.
+Phase 0 (Foundation) — monorepo scaffold, task queue, and worktree manager landed.
+
+## Requirements
+
+- Node.js >= 20
+- pnpm >= 9
+- Git
+
+## Setup
+
+```powershell
+pnpm install
+pnpm build
+pnpm test
+```
+
+## CLI
+
+```powershell
+pnpm aether task create -f examples/task-sample.json
+pnpm aether task list
+pnpm aether worktree create -t <task-id>
+pnpm aether worktree list
+```
+
+Task state is stored in `.aether/tasks.json`. Worktrees live under `.worktrees/`.
+
+## Packages
+
+| Package | Purpose |
+|---------|---------|
+| `@aether/shared` | Task schema, paths, validation profiles |
+| `@aether/task-queue` | JSON-backed structured task queue |
+| `@aether/worktree-manager` | Git worktree lifecycle per task |
+| `@aether/cli` | Unified `aether` command |
 
 ## Key documents
 

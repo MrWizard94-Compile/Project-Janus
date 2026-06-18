@@ -1,0 +1,19 @@
+{
+  "assignee": "grok",
+  "context_refs": ["arch:framedblocks-mixin-pattern"],
+  "validation_profile": "neoforge-mixin-v1",
+  "spec": {
+    "objective": "Convert target mixin class to NeoForge-compatible injection pattern",
+    "constraints": [
+      "No behavior change",
+      "Preserve @Mixin target mapping"
+    ],
+    "files_in_scope": [
+      "src/main/java/example/MixinExample.java"
+    ],
+    "acceptance_criteria": [
+      "Passes validation profile neoforge-mixin-v1",
+      "Gradle compileJava succeeds in task worktree"
+    ]
+  }
+}
