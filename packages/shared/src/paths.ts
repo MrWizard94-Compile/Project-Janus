@@ -30,6 +30,7 @@ export function formatBranchName(taskId: string): string {
 
 export const CONFIG_FILE = "config.json";
 export const RECEIPTS_DIR = "receipts";
+export const ORCHESTRATION_DIR = "orchestration";
 
 export function resolveAetherConfigPath(repoRoot: string): string {
   return join(resolveAetherDir(repoRoot), CONFIG_FILE);
@@ -78,4 +79,12 @@ export function resolveWorkloadWorktreePath(
   clonePath = "repo",
 ): string {
   return join(resolveWorkloadRepoPath(repoRoot, workloadId, clonePath), WORKTREES_DIR, worktreeName);
+}
+
+export function resolveOrchestrationDir(repoRoot: string): string {
+  return join(resolveAetherDir(repoRoot), ORCHESTRATION_DIR);
+}
+
+export function resolveOrchestrationManifestPath(repoRoot: string, parentId: string): string {
+  return join(resolveOrchestrationDir(repoRoot), `${parentId}.json`);
 }

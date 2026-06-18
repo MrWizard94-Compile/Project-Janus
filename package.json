@@ -1,6 +1,6 @@
 {
   "name": "project-janus",
-  "version": "0.1.0",
+  "version": "0.4.0",
   "private": true,
   "bin": {
     "aether": "./packages/cli/dist/bin.js"
@@ -20,7 +20,8 @@
     "aether": "pnpm --filter @aether/cli exec aether",
     "e2e:typescript": "node scripts/e2e-typescript.mjs",
     "e2e:framedblocks": "node scripts/e2e-framedblocks.mjs",
-    "e2e:framedblocks-batch01": "node scripts/e2e-framedblocks-batch01.mjs"
+    "e2e:framedblocks-batch01": "node scripts/e2e-framedblocks-batch01.mjs",
+    "e2e:orchestration": "node scripts/e2e-orchestration.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.15.21",

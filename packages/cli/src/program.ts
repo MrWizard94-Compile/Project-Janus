@@ -10,6 +10,7 @@ import {
   WorktreeManager,
   type CreateWorktreeOptions,
 } from "@aether/worktree-manager";
+import { OrchestratorService, type DelegationPlan } from "@aether/orchestrator";
 import { findRepoRoot } from "./repo.js";
 
 interface TaskCreateFile {
@@ -32,8 +33,8 @@ export function buildProgram(): Command {
 
   program
     .name("aether")
-    .description("Aether Phase 0 CLI — task queue, validation gate, and worktrees")
-    .version("0.3.0");
+    .description("Aether CLI — task queue, validation gate, worktrees, and Phase 1 orchestration")
+    .version("0.4.0");
 
   const task = program.command("task").description("Manage structured tasks");
 
@@ -380,6 +381,106 @@ export function buildProgram(): Command {
       const handoff = new HandoffService(repoRoot);
       const task = await handoff.applyValidatedPatch(repoRoot, proposal);
       console.log(JSON.stringify(task, null, 2));
+    });
+
+  const orchestrate = program
+    .command("orchestrate")
+    .description("Phase 1 orchestration — delegation plans and child rollups");
+
+  orchestrate
+    .command("plan")
+    .description("Create parent and child tasks from a delegation plan JSON file")
+    .requiredOption("-f, --file <path>", "Delegation plan JSON file")
+    .action(async (options: { file: string }) => {
+      const repoRoot = await findRepoRoot(process.cwd());
+      const raw = await readFile(options.file, "utf8");
+      const plan = JSON.parse(raw) as unknown;
+      const orchestrator = new OrchestratorService(repoRoot);
+      const result = await orchestrator.createPlan(plan as DelegationPlan);
+      console.log(JSON.stringify(result, null, 2));
+    });
+
+  orchestrate
+    .command("status")
+    .description("Roll up child task statuses for a parent task")
+    .requiredOption("-t, --task <parentId>", "Parent task identifier")
+    .action(async (options: { task: string }) => {
+      const repoRoot = await findRepoRoot(process.cwd());
+      const orchestrator = new OrchestratorService(repoRoot);
+      const rollup = await orchestrator.rollupStatus(options.task);
+      console.log(JSON.stringify(rollup, null, 2));
+
+      if (!rollup.complete) {
+        process.exitCode = 1;
+      }
+    });
+
+  orchestrate
+    .command("provision")
+    .description("Provision worktrees for all children missing worktrees")
+    .requiredOption("-t, --task <parentId>", "Parent task identifier")
+    .action(async (options: { task: string }) => {
+      const repoRoot = await findRepoRoot(process.cwd());
+      const orchestrator = new OrchestratorService(repoRoot);
+      const provisioned = await orchestrator.provisionChildren(options.task);
+      console.log(JSON.stringify(provisioned, null, 2));
+    });
+
+  orchestrate
+    .command("run")
+    .description("Run identity-patch children through the validation gate")
+    .requiredOption("-t, --task <parentId>", "Parent task identifier")
+    .action(async (options: { task: string }) => {
+      const repoRoot = await findRepoRoot(process.cwd());
+      const orchestrator = new OrchestratorService(repoRoot);
+      const results = await orchestrator.runChildren(options.task);
+      const rollup = await orchestrator.rollupStatus(options.task);
+      console.log(JSON.stringify({ results, rollup }, null, 2));
+
+      if (!rollup.complete) {
+        process.exitCode = 1;
+      }
+    });
+
+  const execute = program
+    .command("execute")
+    .description("Grok executor surface — scoped briefs and identity patches");
+
+  execute
+    .command("brief")
+    .description("Build minimal executor brief JSON for a task")
+    .requiredOption("-t, --task <taskId>", "Task identifier")
+    .action(async (options: { task: string }) => {
+      const repoRoot = await findRepoRoot(process.cwd());
+      const orchestrator = new OrchestratorService(repoRoot);
+      const brief = await orchestrator.buildExecutorBrief(options.task);
+      console.log(JSON.stringify(brief, null, 2));
+    });
+
+  execute
+    .command("identity-patch")
+    .description("Build identity patch proposal JSON (no submit)")
+    .requiredOption("-t, --task <taskId>", "Task identifier")
+    .action(async (options: { task: string }) => {
+      const repoRoot = await findRepoRoot(process.cwd());
+      const orchestrator = new OrchestratorService(repoRoot);
+      const proposal = await orchestrator.buildIdentityPatch(options.task);
+      console.log(JSON.stringify(proposal, null, 2));
+    });
+
+  execute
+    .command("run")
+    .description("Execute an identity-patch task through the validation gate")
+    .requiredOption("-t, --task <taskId>", "Task identifier")
+    .action(async (options: { task: string }) => {
+      const repoRoot = await findRepoRoot(process.cwd());
+      const orchestrator = new OrchestratorService(repoRoot);
+      const result = await orchestrator.executeIdentityTask(options.task);
+      console.log(JSON.stringify(result, null, 2));
+
+      if (result.task.status !== "accepted" || !result.validation.passed) {
+        process.exitCode = 1;
+      }
     });
 
   return program;

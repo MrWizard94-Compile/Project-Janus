@@ -1,0 +1,96 @@
+{
+  "parent": {
+    "assignee": "claude",
+    "workload": "framedblocks",
+    "context_refs": [
+      "arch:framedblocks-mixin-pattern",
+      "doc:handoff-protocol",
+      "ref:validation-rules",
+      "ref:neoforged"
+    ],
+    "validation_profile": "neoforge-mixin-v1",
+    "spec": {
+      "objective": "Phase 1 orchestration smoke: Claude delegates FramedBlocks batch-01 mixin baseline verification (children 03 and 05) to Grok",
+      "constraints": [
+        "Two-child subset of batch 01 for ~2–3 minute runtime",
+        "Grok executes identity patches only through the validation gate",
+        "No behavior change across delegated children"
+      ],
+      "files_in_scope": [
+        "src/main/java/io/github/xfacthd/framedblocks/mixin/MixinStateDefinitionBuilder.java",
+        "src/main/java/io/github/xfacthd/framedblocks/mixin/client/MixinLevelRenderer.java"
+      ],
+      "acceptance_criteria": [
+        "Both child tasks created with parent_id linking to this task",
+        "Orchestrate run completes with all identity children accepted",
+        "Gradle compileJava succeeds in each workload worktree"
+      ]
+    }
+  },
+  "children": [
+    {
+      "assignee": "grok",
+      "patch_mode": "identity",
+      "task": {
+        "workload": "framedblocks",
+        "context_refs": [
+          "arch:framedblocks-mixin-pattern",
+          "doc:handoff-protocol",
+          "ref:validation-rules",
+          "ref:neoforged"
+        ],
+        "validation_profile": "neoforge-mixin-v1",
+        "spec": {
+          "objective": "Baseline MixinStateDefinitionBuilder: verify StateDefinition.Builder accessor mixin (document-as-is; already NeoForge-compatible)",
+          "constraints": [
+            "No behavior change",
+            "Preserve @Mixin(StateDefinition.Builder.class) target",
+            "Single file patch only"
+          ],
+          "files_in_scope": [
+            "src/main/java/io/github/xfacthd/framedblocks/mixin/MixinStateDefinitionBuilder.java"
+          ],
+          "acceptance_criteria": [
+            "Passes neoforge-mixin-v1 validation on first identity patch",
+            "gradlew compileJava exits 0 in workload worktree",
+            "Patch applied and task accepted"
+          ]
+        }
+      }
+    },
+    {
+      "assignee": "grok",
+      "patch_mode": "identity",
+      "task": {
+        "workload": "framedblocks",
+        "context_refs": [
+          "arch:framedblocks-mixin-pattern",
+          "doc:handoff-protocol",
+          "ref:validation-rules",
+          "ref:neoforged"
+        ],
+        "validation_profile": "neoforge-mixin-v1",
+        "spec": {
+          "objective": "Baseline MixinLevelRenderer: verify client-side cutout-leaves cache invalidation hooks (document-as-is; already NeoForge-compatible)",
+          "constraints": [
+            "No behavior change",
+            "Preserve @Mixin(LevelRenderer.class) target and client source set registration",
+            "Single file patch only"
+          ],
+          "files_in_scope": [
+            "src/main/java/io/github/xfacthd/framedblocks/mixin/client/MixinLevelRenderer.java"
+          ],
+          "acceptance_criteria": [
+            "Passes neoforge-mixin-v1 validation",
+            "gradlew compileJava exits 0 in workload worktree",
+            "Patch applied and task accepted"
+          ]
+        }
+      }
+    }
+  ],
+  "provision": {
+    "auto_worktree": true,
+    "auto_prepare": true
+  }
+}

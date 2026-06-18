@@ -23,6 +23,9 @@ importers:
       '@aether/context':
         specifier: workspace:*
         version: link:../context
+      '@aether/orchestrator':
+        specifier: workspace:*
+        version: link:../orchestrator
       '@aether/shared':
         specifier: workspace:*
         version: link:../shared
@@ -76,6 +79,27 @@ importers:
       tsx:
         specifier: ^4.19.4
         version: 4.22.4
+
+  packages/orchestrator:
+    dependencies:
+      '@aether/shared':
+        specifier: workspace:*
+        version: link:../shared
+      '@aether/task-queue':
+        specifier: workspace:*
+        version: link:../task-queue
+      '@aether/validation-kernel':
+        specifier: workspace:*
+        version: link:../validation-kernel
+      '@aether/workload-manager':
+        specifier: workspace:*
+        version: link:../workload-manager
+      '@aether/worktree-manager':
+        specifier: workspace:*
+        version: link:../worktree-manager
+      zod:
+        specifier: ^3.25.42
+        version: 3.25.76
 
   packages/shared:
     dependencies:
