@@ -1,0 +1,50 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+.env.*
+
+# Build outputs
+dist/
+build/
+out/
+target/
+*.class
+*.jar
+.gradle/
+
+# IDE / OS
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs & temp
+*.log
+tmp/
+temp/
+.cache/
+
+# Test / coverage
+coverage/
+.nyc_output/
+.pytest_cache/
+htmlcov/
+
+# Worktrees & local Aether runtime state
+.worktrees/
+.aether/
+*.sqlite
+*.sqlite-journal
+
+# Secrets
+*.pem
+*.key
+credentials.json
