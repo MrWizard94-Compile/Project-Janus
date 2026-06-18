@@ -1,0 +1,11 @@
+{
+  "jdtls": {
+    "java_path": "java",
+    "home": "C:/path/to/jdtls",
+    "workspace_data_dir": "C:/path/to/jdtls/data/aether-workspace"
+  },
+  "validation": {
+    "build_timeout_ms": 300000,
+    "lsp_timeout_ms": 60000
+  }
+}

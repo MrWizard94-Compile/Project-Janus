@@ -4,7 +4,7 @@ Dual-AI development platform (**Aether**) — Claude orchestrates, Grok executes
 
 ## Status
 
-Phase 0 (Foundation) — monorepo scaffold, task queue, and worktree manager landed.
+Phase 0 (Foundation) — task queue, worktree manager, validation kernel, and patch handoff landed.
 
 ## Requirements
 
@@ -26,10 +26,13 @@ pnpm test
 pnpm aether task create -f examples/task-sample.json
 pnpm aether task list
 pnpm aether worktree create -t <task-id>
-pnpm aether worktree list
+pnpm aether patch submit -f examples/patch-mixin-valid.json
+pnpm aether patch submit -f examples/patch-mixin-valid.json --apply
 ```
 
-Task state is stored in `.aether/tasks.json`. Worktrees live under `.worktrees/`.
+Task state is stored in `.aether/tasks.json`. Worktrees live under `.worktrees/`. Validation receipts live in `.aether/receipts/`.
+
+Copy `examples/aether-config.example.json` to `.aether/config.json` when JDT.LS Java validation is required.
 
 ## Packages
 
@@ -38,6 +41,7 @@ Task state is stored in `.aether/tasks.json`. Worktrees live under `.worktrees/`
 | `@aether/shared` | Task schema, paths, validation profiles |
 | `@aether/task-queue` | JSON-backed structured task queue |
 | `@aether/worktree-manager` | Git worktree lifecycle per task |
+| `@aether/validation-kernel` | LSP, AST, rules, build layers + patch gate |
 | `@aether/cli` | Unified `aether` command |
 
 ## Key documents

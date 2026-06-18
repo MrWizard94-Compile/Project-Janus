@@ -1,7 +1,8 @@
 import { readFile } from "node:fs/promises";
 import { Command } from "commander";
-import { AssigneeSchema, TaskStatusSchema } from "@aether/shared";
+import { AssigneeSchema, PatchProposalSchema, TaskStatusSchema } from "@aether/shared";
 import { TaskQueue } from "@aether/task-queue";
+import { HandoffService } from "@aether/validation-kernel";
 import { WorktreeManager } from "@aether/worktree-manager";
 import { findRepoRoot } from "./repo.js";
 
@@ -24,8 +25,8 @@ export function buildProgram(): Command {
 
   program
     .name("aether")
-    .description("Aether Phase 0 CLI — task queue and worktree management")
-    .version("0.1.0");
+    .description("Aether Phase 0 CLI — task queue, validation gate, and worktrees")
+    .version("0.2.0");
 
   const task = program.command("task").description("Manage structured tasks");
 
@@ -135,6 +136,54 @@ export function buildProgram(): Command {
       await manager.destroy(options.task);
       const updated = await queue.setWorktree(options.task, null);
       console.log(JSON.stringify(updated, null, 2));
+    });
+
+  const patch = program.command("patch").description("Submit and apply validated patches");
+
+  patch
+    .command("submit")
+    .description("Validate a patch proposal against the task worktree")
+    .requiredOption("-f, --file <path>", "Patch proposal JSON file")
+    .option("--apply", "Persist patch when validation passes", false)
+    .action(async (options: { file: string; apply: boolean }) => {
+      const repoRoot = await findRepoRoot(process.cwd());
+      const raw = await readFile(options.file, "utf8");
+      const proposal = PatchProposalSchema.parse(JSON.parse(raw) as unknown);
+      const handoff = new HandoffService(repoRoot);
+      const result = await handoff.submit({
+        repoRoot,
+        proposal,
+        apply: options.apply,
+      });
+
+      console.log(
+        JSON.stringify(
+          {
+            applied: result.applied,
+            task: result.task,
+            validation: result.validation,
+          },
+          null,
+          2,
+        ),
+      );
+
+      if (!result.validation.passed) {
+        process.exitCode = 1;
+      }
+    });
+
+  patch
+    .command("apply")
+    .description("Apply a patch that already has a passing validation receipt")
+    .requiredOption("-f, --file <path>", "Patch proposal JSON file")
+    .action(async (options: { file: string }) => {
+      const repoRoot = await findRepoRoot(process.cwd());
+      const raw = await readFile(options.file, "utf8");
+      const proposal = PatchProposalSchema.parse(JSON.parse(raw) as unknown);
+      const handoff = new HandoffService(repoRoot);
+      const task = await handoff.applyValidatedPatch(repoRoot, proposal);
+      console.log(JSON.stringify(task, null, 2));
     });
 
   return program;

@@ -9,7 +9,7 @@
       "Preserve @Mixin target mapping"
     ],
     "files_in_scope": [
-      "src/main/java/example/MixinExample.java"
+      "src/main/java/com/example/mixin/MixinExample.java"
     ],
     "acceptance_criteria": [
       "Passes validation profile neoforge-mixin-v1",

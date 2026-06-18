@@ -1,0 +1,9 @@
+{
+  "task_id": "REPLACE_WITH_TASK_ID",
+  "files": [
+    {
+      "path": "src/main/java/com/example/mixin/MixinExample.java",
+      "content": "package com.example.mixin;\n\nimport org.spongepowered.asm.mixin.Mixin;\nimport org.spongepowered.asm.mixin.injection.At;\nimport org.spongepowered.asm.mixin.injection.Inject;\nimport org.spongepowered.asm.mixin.injection.callback.CallbackInfo;\n\n@Mixin(TargetClass.class)\npublic class MixinExample {\n    @Inject(method = \"tick\", at = @At(\"HEAD\"))\n    private void onTick(CallbackInfo ci) {\n    }\n}\n"
+    }
+  ]
+}

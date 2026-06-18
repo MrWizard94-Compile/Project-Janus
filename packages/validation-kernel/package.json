@@ -1,28 +1,27 @@
 {
-  "name": "@aether/cli",
+  "name": "@aether/validation-kernel",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "bin": {
-    "aether": "./dist/bin.js"
-  },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "dev": "node --import tsx src/bin.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run --passWithNoTests"
+    "test": "vitest run"
   },
   "dependencies": {
     "@aether/shared": "workspace:*",
     "@aether/task-queue": "workspace:*",
-    "@aether/validation-kernel": "workspace:*",
     "@aether/worktree-manager": "workspace:*",
-    "commander": "^13.1.0"
-  },
-  "devDependencies": {
-    "tsx": "^4.19.4"
+    "vscode-languageserver": "^9.0.1",
+    "vscode-languageserver-textdocument": "^1.0.12"
   }
 }
