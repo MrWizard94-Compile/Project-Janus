@@ -5,7 +5,7 @@ import { ContextResolver } from "@aether/context";
 import { TaskQueue } from "@aether/task-queue";
 import { HandoffService } from "@aether/validation-kernel";
 import { setupJdtls, WorkloadManager } from "@aether/workload-manager";
-import { WorktreeManager } from "@aether/worktree-manager";
+import { prepareWorktreeDependencies, WorktreeManager } from "@aether/worktree-manager";
 import { findRepoRoot } from "./repo.js";
 
 interface TaskCreateFile {
@@ -124,6 +124,29 @@ export function buildProgram(): Command {
       const manager = new WorktreeManager(repoRoot);
       const entries = await manager.list();
       console.log(JSON.stringify(entries, null, 2));
+    });
+
+  worktree
+    .command("prepare")
+    .description("Install dependencies in a task worktree")
+    .requiredOption("-t, --task <taskId>", "Task identifier")
+    .action(async (options: { task: string }) => {
+      const repoRoot = await findRepoRoot(process.cwd());
+      const manager = new WorktreeManager(repoRoot);
+      const queue = new TaskQueue(repoRoot);
+      const task = await queue.get(options.task);
+
+      if (!task.worktree) {
+        throw new Error(`Task ${task.id} has no worktree`);
+      }
+
+      const entry = await manager.findByTaskId(task.id);
+      if (!entry) {
+        throw new Error(`Worktree not found for task ${task.id}`);
+      }
+
+      const result = await prepareWorktreeDependencies(entry.path);
+      console.log(JSON.stringify(result, null, 2));
     });
 
   worktree

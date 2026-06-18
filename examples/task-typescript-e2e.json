@@ -1,0 +1,19 @@
+{
+  "assignee": "grok",
+  "context_refs": ["doc:handoff-protocol"],
+  "validation_profile": "typescript-v1",
+  "spec": {
+    "objective": "E2E proof: update shared validation profile metadata through the validation gate",
+    "constraints": [
+      "No behavior change",
+      "Must pass typescript-v1 profile"
+    ],
+    "files_in_scope": [
+      "packages/shared/src/profiles.ts"
+    ],
+    "acceptance_criteria": [
+      "pnpm typecheck passes in task worktree",
+      "Patch applied and task accepted"
+    ]
+  }
+}

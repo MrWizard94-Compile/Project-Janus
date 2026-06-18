@@ -55,6 +55,7 @@ export class HandoffService {
       task.id,
       validation.passed,
       validation.errors,
+      options.apply,
     );
 
     return {

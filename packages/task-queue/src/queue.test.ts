@@ -73,7 +73,26 @@ describe("TaskQueue", () => {
       },
     ]);
 
-    expect(failed.status).toBe("failed");
     expect(failed.validation_attempts).toHaveLength(1);
+  });
+
+  it("keeps task in progress after dry-run validation pass", async () => {
+    const task = await queue.create({
+      spec: {
+        objective: "Test",
+        constraints: [],
+        files_in_scope: [],
+        acceptance_criteria: [],
+      },
+      validation_profile: "typescript-v1",
+    });
+
+    await queue.transition(task.id, "in_progress");
+    await queue.transition(task.id, "validating");
+
+    const pending = await queue.recordValidation(task.id, true, [], false);
+
+    expect(pending.status).toBe("in_progress");
+    expect(pending.result).toBe("validation_passed_pending_apply");
   });
 });

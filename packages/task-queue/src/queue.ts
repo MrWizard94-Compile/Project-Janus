@@ -91,6 +91,7 @@ export class TaskQueue {
     taskId: string,
     passed: boolean,
     errors: ValidationError[],
+    acceptTask = true,
   ): Promise<Task> {
     const attempt: ValidationAttempt = {
       attempted_at: new Date().toISOString(),
@@ -106,10 +107,19 @@ export class TaskQueue {
       }
 
       task.validation_attempts.push(attempt);
-      task.status = passed ? "accepted" : "failed";
-      if (passed) {
-        task.result = "validation_passed";
+      if (!passed) {
+        task.status = "failed";
+        return;
       }
+
+      if (acceptTask) {
+        task.status = "accepted";
+        task.result = "validation_passed";
+        return;
+      }
+
+      task.status = "in_progress";
+      task.result = "validation_passed_pending_apply";
     });
   }
 

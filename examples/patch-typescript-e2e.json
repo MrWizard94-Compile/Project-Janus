@@ -1,0 +1,9 @@
+{
+  "task_id": "REPLACE_WITH_TASK_ID",
+  "files": [
+    {
+      "path": "packages/shared/src/profiles.ts",
+      "content": "export interface ValidationProfile {\n  id: string;\n  description: string;\n  layers: readonly (\"lsp\" | \"ast\" | \"rules\" | \"build\")[];\n  build_command: string | null;\n}\n\nexport const VALIDATION_PROFILES: Record<string, ValidationProfile> = {\n  \"neoforge-mixin-v1\": {\n    id: \"neoforge-mixin-v1\",\n    description: \"NeoForge mixin validation: LSP, AST rules, domain rules, Gradle compile\",\n    layers: [\"lsp\", \"ast\", \"rules\", \"build\"],\n    build_command: \"./gradlew compileJava\",\n  },\n  \"typescript-v1\": {\n    id: \"typescript-v1\",\n    description: \"TypeScript monorepo validation: rules and typecheck build\",\n    layers: [\"rules\", \"build\"],\n    build_command: \"pnpm typecheck\",\n  },\n};\n\nexport function getValidationProfile(id: string): ValidationProfile {\n  const profile = VALIDATION_PROFILES[id];\n  if (!profile) {\n    const known = Object.keys(VALIDATION_PROFILES).join(\", \");\n    throw new Error(`Unknown validation profile \"${id}\". Known profiles: ${known}`);\n  }\n  return profile;\n}\n"
+    }
+  ]
+}

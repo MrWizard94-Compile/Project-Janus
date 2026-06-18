@@ -14,7 +14,8 @@
     "test": "pnpm -r run test",
     "lint": "pnpm -r run lint",
     "typecheck": "pnpm -r run typecheck",
-    "aether": "pnpm --filter @aether/cli exec aether"
+    "aether": "pnpm --filter @aether/cli exec aether",
+    "e2e:typescript": "node scripts/e2e-typescript.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.15.21",

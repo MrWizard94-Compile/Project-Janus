@@ -18,6 +18,7 @@ Phase 0 (Foundation) — validation kernel, MCP server, workload manager, and JD
 pnpm install
 pnpm build
 pnpm test
+pnpm e2e:typescript
 ```
 
 ## CLI
