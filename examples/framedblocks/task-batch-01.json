@@ -1,0 +1,31 @@
+{
+  "assignee": "claude",
+  "workload": "framedblocks",
+  "context_refs": [
+    "arch:framedblocks-mixin-pattern",
+    "doc:handoff-protocol",
+    "ref:validation-rules",
+    "ref:neoforged"
+  ],
+  "validation_profile": "neoforge-mixin-v1",
+  "spec": {
+    "objective": "Batch 01 parent: baseline neoforge-mixin-v1 validation for five core FramedBlocks mixin classes on branch 26.1",
+    "constraints": [
+      "Decompose into one child task per mixin file",
+      "No behavior change across batch",
+      "Preserve @Mixin target mappings and framedblocks.mixin.json registration"
+    ],
+    "files_in_scope": [
+      "src/main/java/io/github/xfacthd/framedblocks/mixin/MixinBlockStateBase.java",
+      "src/main/java/io/github/xfacthd/framedblocks/mixin/MixinStairBlock.java",
+      "src/main/java/io/github/xfacthd/framedblocks/mixin/MixinStateDefinitionBuilder.java",
+      "src/main/java/io/github/xfacthd/framedblocks/mixin/MixinMapItemSavedData.java",
+      "src/main/java/io/github/xfacthd/framedblocks/mixin/client/MixinLevelRenderer.java"
+    ],
+    "acceptance_criteria": [
+      "All five child tasks created with parent_id linking to this task",
+      "Each child task accepted through neoforge-mixin-v1 gate",
+      "Gradle compileJava succeeds in each workload worktree"
+    ]
+  }
+}

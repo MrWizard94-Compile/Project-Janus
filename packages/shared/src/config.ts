@@ -12,6 +12,8 @@ export const AetherConfigSchema = z.object({
     .object({
       build_timeout_ms: z.number().int().positive().default(300_000),
       lsp_timeout_ms: z.number().int().positive().default(60_000),
+      /** Extra delay after JDT.LS initialize before didOpen; helps Gradle import complete. */
+      lsp_gradle_import_delay_ms: z.number().int().nonnegative().optional(),
     })
     .optional(),
 });

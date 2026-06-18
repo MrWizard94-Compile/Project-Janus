@@ -1,0 +1,10 @@
+{
+  "task_id": "REPLACE_WITH_CHILD_03_TASK_ID",
+  "allow_overwrite": false,
+  "files": [
+    {
+      "path": "src/main/java/io/github/xfacthd/framedblocks/mixin/MixinStateDefinitionBuilder.java",
+      "content": "package io.github.xfacthd.framedblocks.mixin;\n\nimport io.github.xfacthd.framedblocks.api.internal.duck.StateDefinitionBuilderAccessor;\nimport net.minecraft.world.level.block.state.StateDefinition;\nimport net.minecraft.world.level.block.state.properties.Property;\nimport org.spongepowered.asm.mixin.Final;\nimport org.spongepowered.asm.mixin.Mixin;\nimport org.spongepowered.asm.mixin.Shadow;\n\nimport java.util.Map;\n\n@Mixin(StateDefinition.Builder.class)\npublic class MixinStateDefinitionBuilder implements StateDefinitionBuilderAccessor {\n    @Shadow\n    @Final\n    private Map<String, Property<?>> properties;\n\n    @Override\n    public boolean framedblocks$hasProperty(Property<?> property) {\n        return properties.containsKey(property.getName());\n    }\n\n    @Override\n    public void framedblocks$removeProperty(Property<?> property) {\n        properties.remove(property.getName());\n    }\n}\n"
+    }
+  ]
+}

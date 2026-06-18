@@ -1,7 +1,18 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { resolveWorkloadDir, resolveWorkloadsDir } from "@aether/shared";
-import { assertGitSuccess, runGit } from "@aether/worktree-manager";
+import {
+  resolveWorkloadDir,
+  resolveWorkloadRepoPath,
+  resolveWorkloadsDir,
+  resolveWorktreePath,
+} from "@aether/shared";
+import {
+  assertGitSuccess,
+  runGit,
+  WorktreeManager,
+  type CreateWorktreeOptions,
+  type WorktreeEntry,
+} from "@aether/worktree-manager";
 import { WorkloadManifest, WorkloadManifestSchema } from "./manifest.js";
 
 export interface InitWorkloadOptions {
@@ -123,5 +134,73 @@ export class WorkloadManager {
     assertGitSuccess(clone, `clone ${manifest.repository}`);
 
     return { manifest, repo_path: repoPath };
+  }
+
+  async resolveRepoPath(workloadId: string): Promise<string> {
+    const manifest = await this.get(workloadId);
+    return resolveWorkloadRepoPath(this.repoRoot, workloadId, manifest.clone_path);
+  }
+
+  async assertRepoReady(workloadId: string): Promise<string> {
+    const repoPath = await this.resolveRepoPath(workloadId);
+    const insideWorkTree = await runGit(repoPath, ["rev-parse", "--is-inside-work-tree"]);
+
+    if (insideWorkTree.exitCode !== 0) {
+      throw new Error(
+        `Workload ${workloadId} repository is not cloned at ${repoPath}. Run: aether workload clone ${workloadId}`,
+      );
+    }
+
+    return repoPath;
+  }
+
+  private async worktreeManager(workloadId: string): Promise<WorktreeManager> {
+    const repoPath = await this.assertRepoReady(workloadId);
+    return new WorktreeManager(repoPath);
+  }
+
+  async createWorktree(
+    workloadId: string,
+    options: CreateWorktreeOptions,
+  ): Promise<WorktreeEntry> {
+    const manifest = await this.get(workloadId);
+    const manager = await this.worktreeManager(workloadId);
+
+    return manager.create({
+      ...options,
+      baseBranch: options.baseBranch ?? manifest.branch,
+    });
+  }
+
+  async listWorktrees(workloadId: string): Promise<WorktreeEntry[]> {
+    const manager = await this.worktreeManager(workloadId);
+    return manager.list();
+  }
+
+  async findWorktreeByTaskId(
+    workloadId: string,
+    taskId: string,
+  ): Promise<WorktreeEntry | null> {
+    const manager = await this.worktreeManager(workloadId);
+    return manager.findByTaskId(taskId);
+  }
+
+  async destroyWorktree(workloadId: string, taskId: string): Promise<void> {
+    const manager = await this.worktreeManager(workloadId);
+    await manager.destroy(taskId);
+  }
+
+  async resolveWorktreePath(
+    workloadId: string,
+    taskId: string,
+    worktreeName: string,
+  ): Promise<string> {
+    const entry = await this.findWorktreeByTaskId(workloadId, taskId);
+    if (entry) {
+      return entry.path;
+    }
+
+    const repoPath = await this.assertRepoReady(workloadId);
+    return resolveWorktreePath(repoPath, worktreeName);
   }
 }

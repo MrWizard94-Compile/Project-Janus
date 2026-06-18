@@ -2,6 +2,9 @@
   "name": "project-janus",
   "version": "0.1.0",
   "private": true,
+  "bin": {
+    "aether": "./packages/cli/dist/bin.js"
+  },
   "description": "Aether dual-AI development platform",
   "license": "MIT",
   "engines": {
@@ -15,7 +18,8 @@
     "lint": "pnpm -r run lint",
     "typecheck": "pnpm -r run typecheck",
     "aether": "pnpm --filter @aether/cli exec aether",
-    "e2e:typescript": "node scripts/e2e-typescript.mjs"
+    "e2e:typescript": "node scripts/e2e-typescript.mjs",
+    "e2e:framedblocks": "node scripts/e2e-framedblocks.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.15.21",

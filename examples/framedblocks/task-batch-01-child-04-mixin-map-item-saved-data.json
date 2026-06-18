@@ -1,0 +1,28 @@
+{
+  "parent_id": "REPLACE_WITH_PARENT_TASK_ID",
+  "assignee": "grok",
+  "workload": "framedblocks",
+  "context_refs": [
+    "arch:framedblocks-mixin-pattern",
+    "doc:handoff-protocol",
+    "ref:validation-rules",
+    "ref:neoforged"
+  ],
+  "validation_profile": "neoforge-mixin-v1",
+  "spec": {
+    "objective": "Baseline MixinMapItemSavedData: verify FramedMap marker persistence mixin with MixinExtras expression/inject hooks (document-as-is unless annotation rules require fixes)",
+    "constraints": [
+      "No behavior change",
+      "Preserve @Mixin(MapItemSavedData.class) target",
+      "Single file patch only"
+    ],
+    "files_in_scope": [
+      "src/main/java/io/github/xfacthd/framedblocks/mixin/MixinMapItemSavedData.java"
+    ],
+    "acceptance_criteria": [
+      "Passes neoforge-mixin-v1 validation",
+      "gradlew compileJava exits 0 in workload worktree",
+      "Patch applied and task accepted"
+    ]
+  }
+}

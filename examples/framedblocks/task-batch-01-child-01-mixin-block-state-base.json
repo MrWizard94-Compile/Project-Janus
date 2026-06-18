@@ -1,0 +1,28 @@
+{
+  "parent_id": "REPLACE_WITH_PARENT_TASK_ID",
+  "assignee": "grok",
+  "workload": "framedblocks",
+  "context_refs": [
+    "arch:framedblocks-mixin-pattern",
+    "doc:handoff-protocol",
+    "ref:validation-rules",
+    "ref:neoforged"
+  ],
+  "validation_profile": "neoforge-mixin-v1",
+  "spec": {
+    "objective": "Baseline MixinBlockStateBase: verify NeoForge-compatible StateCacheAccessor duck interface (document-as-is unless rules require annotation fixes)",
+    "constraints": [
+      "No behavior change",
+      "Preserve @Mixin(BlockBehaviour.BlockStateBase.class) target",
+      "Single file patch only"
+    ],
+    "files_in_scope": [
+      "src/main/java/io/github/xfacthd/framedblocks/mixin/MixinBlockStateBase.java"
+    ],
+    "acceptance_criteria": [
+      "Passes neoforge-mixin-v1 rules and AST layers",
+      "gradlew compileJava exits 0 in workload worktree",
+      "Patch applied and task accepted"
+    ]
+  }
+}

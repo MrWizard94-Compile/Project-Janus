@@ -4,13 +4,18 @@ import { AssigneeSchema, PatchProposalSchema, TaskStatusSchema } from "@aether/s
 import { ContextResolver } from "@aether/context";
 import { TaskQueue } from "@aether/task-queue";
 import { HandoffService } from "@aether/validation-kernel";
-import { setupJdtls, WorkloadManager } from "@aether/workload-manager";
-import { prepareWorktreeDependencies, WorktreeManager } from "@aether/worktree-manager";
+import { resolveTaskWorkspace, setupJdtls, WorkloadManager } from "@aether/workload-manager";
+import {
+  prepareWorktreeDependencies,
+  WorktreeManager,
+  type CreateWorktreeOptions,
+} from "@aether/worktree-manager";
 import { findRepoRoot } from "./repo.js";
 
 interface TaskCreateFile {
   parent_id?: string | null;
   worktree?: string | null;
+  workload?: string | null;
   assignee?: "grok" | "claude" | null;
   context_refs?: string[];
   validation_profile: string;
@@ -101,28 +106,40 @@ export function buildProgram(): Command {
     .command("create")
     .description("Create an isolated worktree for a task")
     .requiredOption("-t, --task <taskId>", "Task identifier")
-    .option("-b, --base <branch>", "Base branch", "main")
-    .action(async (options: { task: string; base: string }) => {
+    .option("-b, --base <branch>", "Base branch")
+    .option("-w, --workload <id>", "Workload whose cloned repo owns the worktree")
+    .action(async (options: { task: string; base?: string; workload?: string }) => {
       const repoRoot = await findRepoRoot(process.cwd());
-      const manager = new WorktreeManager(repoRoot);
       const queue = new TaskQueue(repoRoot);
 
-      const created = await manager.create({
-        taskId: options.task,
-        baseBranch: options.base,
-      });
+      const createOptions = buildCreateWorktreeOptions(options.task, options.base);
 
-      const updated = await queue.setWorktree(options.task, created.name);
+      const created = options.workload
+        ? await new WorkloadManager(repoRoot).createWorktree(options.workload, createOptions)
+        : await new WorktreeManager(repoRoot).create({
+            ...createOptions,
+            baseBranch: createOptions.baseBranch ?? "main",
+          });
+
+      const updated = await queue.setWorktree(
+        options.task,
+        created.name,
+        options.workload ?? null,
+      );
       console.log(JSON.stringify({ worktree: created, task: updated }, null, 2));
     });
 
   worktree
     .command("list")
     .description("List Aether-managed worktrees")
-    .action(async () => {
+    .option("-w, --workload <id>", "List worktrees for a workload repository")
+    .action(async (options: { workload?: string }) => {
       const repoRoot = await findRepoRoot(process.cwd());
-      const manager = new WorktreeManager(repoRoot);
-      const entries = await manager.list();
+
+      const entries = options.workload
+        ? await new WorkloadManager(repoRoot).listWorktrees(options.workload)
+        : await new WorktreeManager(repoRoot).list();
+
       console.log(JSON.stringify(entries, null, 2));
     });
 
@@ -132,7 +149,6 @@ export function buildProgram(): Command {
     .requiredOption("-t, --task <taskId>", "Task identifier")
     .action(async (options: { task: string }) => {
       const repoRoot = await findRepoRoot(process.cwd());
-      const manager = new WorktreeManager(repoRoot);
       const queue = new TaskQueue(repoRoot);
       const task = await queue.get(options.task);
 
@@ -140,12 +156,8 @@ export function buildProgram(): Command {
         throw new Error(`Task ${task.id} has no worktree`);
       }
 
-      const entry = await manager.findByTaskId(task.id);
-      if (!entry) {
-        throw new Error(`Worktree not found for task ${task.id}`);
-      }
-
-      const result = await prepareWorktreeDependencies(entry.path);
+      const workspaceRoot = await resolveTaskWorkspaceForCli(repoRoot, task);
+      const result = await prepareWorktreeDependencies(workspaceRoot);
       console.log(JSON.stringify(result, null, 2));
     });
 
@@ -155,11 +167,16 @@ export function buildProgram(): Command {
     .requiredOption("-t, --task <taskId>", "Task identifier")
     .action(async (options: { task: string }) => {
       const repoRoot = await findRepoRoot(process.cwd());
-      const manager = new WorktreeManager(repoRoot);
       const queue = new TaskQueue(repoRoot);
+      const task = await queue.get(options.task);
 
-      await manager.destroy(options.task);
-      const updated = await queue.setWorktree(options.task, null);
+      if (task.workload) {
+        await new WorkloadManager(repoRoot).destroyWorktree(task.workload, options.task);
+      } else {
+        await new WorktreeManager(repoRoot).destroy(options.task);
+      }
+
+      const updated = await queue.setWorktree(options.task, null, null);
       console.log(JSON.stringify(updated, null, 2));
     });
 
@@ -230,6 +247,56 @@ export function buildProgram(): Command {
       const manager = new WorkloadManager(repoRoot);
       const result = await manager.clone(id);
       console.log(JSON.stringify(result, null, 2));
+    });
+
+  const workloadWorktree = workload
+    .command("worktree")
+    .description("Manage git worktrees inside a workload repository");
+
+  workloadWorktree
+    .command("create")
+    .description("Create an isolated worktree for a task in a workload repo")
+    .argument("<id>", "Workload identifier")
+    .requiredOption("-t, --task <taskId>", "Task identifier")
+    .option("-b, --base <branch>", "Base branch")
+    .action(async (id: string, options: { task: string; base?: string }) => {
+      const repoRoot = await findRepoRoot(process.cwd());
+      const manager = new WorkloadManager(repoRoot);
+      const queue = new TaskQueue(repoRoot);
+
+      const created = await manager.createWorktree(
+        id,
+        buildCreateWorktreeOptions(options.task, options.base),
+      );
+
+      const updated = await queue.setWorktree(options.task, created.name, id);
+      console.log(JSON.stringify({ worktree: created, task: updated }, null, 2));
+    });
+
+  workloadWorktree
+    .command("list")
+    .description("List Aether-managed worktrees for a workload repository")
+    .argument("<id>", "Workload identifier")
+    .action(async (id: string) => {
+      const repoRoot = await findRepoRoot(process.cwd());
+      const manager = new WorkloadManager(repoRoot);
+      const entries = await manager.listWorktrees(id);
+      console.log(JSON.stringify(entries, null, 2));
+    });
+
+  workloadWorktree
+    .command("destroy")
+    .description("Remove worktree and branch for a task in a workload repository")
+    .argument("<id>", "Workload identifier")
+    .requiredOption("-t, --task <taskId>", "Task identifier")
+    .action(async (id: string, options: { task: string }) => {
+      const repoRoot = await findRepoRoot(process.cwd());
+      const manager = new WorkloadManager(repoRoot);
+      const queue = new TaskQueue(repoRoot);
+
+      await manager.destroyWorktree(id, options.task);
+      const updated = await queue.setWorktree(options.task, null, null);
+      console.log(JSON.stringify(updated, null, 2));
     });
 
   const context = program.command("context").description("Resolve task context references");
@@ -316,4 +383,22 @@ export function buildProgram(): Command {
     });
 
   return program;
+}
+
+async function resolveTaskWorkspaceForCli(
+  repoRoot: string,
+  task: Awaited<ReturnType<TaskQueue["get"]>>,
+): Promise<string> {
+  return resolveTaskWorkspace(repoRoot, task);
+}
+
+function buildCreateWorktreeOptions(
+  taskId: string,
+  baseBranch?: string,
+): CreateWorktreeOptions {
+  if (baseBranch === undefined) {
+    return { taskId };
+  }
+
+  return { taskId, baseBranch };
 }

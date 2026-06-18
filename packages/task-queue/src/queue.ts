@@ -50,6 +50,7 @@ export class TaskQueue {
       id: `task-${randomUUID()}`,
       parent_id: parsed.parent_id ?? null,
       worktree: parsed.worktree ?? null,
+      workload: parsed.workload ?? null,
       status: "pending",
       assignee: parsed.assignee ?? null,
       context_refs: parsed.context_refs,
@@ -74,9 +75,16 @@ export class TaskQueue {
     });
   }
 
-  async setWorktree(taskId: string, worktree: string | null): Promise<Task> {
+  async setWorktree(
+    taskId: string,
+    worktree: string | null,
+    workload?: string | null,
+  ): Promise<Task> {
     return this.mutateTask(taskId, (task) => {
       task.worktree = worktree;
+      if (workload !== undefined) {
+        task.workload = workload;
+      }
     });
   }
 

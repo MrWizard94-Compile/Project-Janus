@@ -2,7 +2,7 @@
   "id": "framedblocks",
   "description": "FramedBlocks mass mixin E2E",
   "repository": "https://github.com/XFactHD/FramedBlocks.git",
-  "branch": "main",
+  "branch": "26.1",
   "validation_profile": "neoforge-mixin-v1",
   "clone_path": "repo"
 }

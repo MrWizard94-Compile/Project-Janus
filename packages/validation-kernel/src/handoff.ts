@@ -1,7 +1,7 @@
 import type { PatchProposal, Task } from "@aether/shared";
-import { hashPatch, resolveWorktreePath } from "@aether/shared";
+import { hashPatch } from "@aether/shared";
 import { TaskQueue } from "@aether/task-queue";
-import { WorktreeManager } from "@aether/worktree-manager";
+import { resolveTaskWorkspace } from "@aether/workload-manager";
 import { ValidationKernel } from "./kernel.js";
 import { applyPatch } from "./patch.js";
 import { readReceipt, receiptMatchesProposal } from "./receipt.js";
@@ -20,12 +20,10 @@ export interface SubmitPatchResult {
 
 export class HandoffService {
   private readonly queue: TaskQueue;
-  private readonly worktrees: WorktreeManager;
   private readonly kernel: ValidationKernel;
 
   constructor(repoRoot: string) {
     this.queue = new TaskQueue(repoRoot);
-    this.worktrees = new WorktreeManager(repoRoot);
     this.kernel = new ValidationKernel();
   }
 
@@ -87,18 +85,10 @@ export class HandoffService {
     return this.queue.setResult(proposal.task_id, "patch_applied");
   }
 
-  private async resolveWorkspace(repoRoot: string, task: Task): Promise<string> {
-    if (!task.worktree) {
-      throw new Error(
-        `Task ${task.id} has no worktree. Run: aether worktree create -t ${task.id}`,
-      );
-    }
-
-    const entry = await this.worktrees.findByTaskId(task.id);
-    if (entry) {
-      return entry.path;
-    }
-
-    return resolveWorktreePath(repoRoot, task.worktree);
+  private async resolveWorkspace(
+    repoRoot: string,
+    task: Awaited<ReturnType<TaskQueue["get"]>>,
+  ): Promise<string> {
+    return resolveTaskWorkspace(repoRoot, task);
   }
 }

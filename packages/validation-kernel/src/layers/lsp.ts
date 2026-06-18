@@ -3,7 +3,11 @@ import { readdir } from "node:fs/promises";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import type { AetherConfig, PatchProposal, ValidationError } from "@aether/shared";
-import { resolveJdtlsConfigDir } from "@aether/workload-manager";
+import {
+  resolveJdtlsConfigDir,
+  resolveWorkspaceJavaHome,
+  type ResolvedWorkspaceJava,
+} from "@aether/workload-manager";
 import {
   createProtocolConnection,
   DiagnosticSeverity,
@@ -83,8 +87,9 @@ async function collectJdtDiagnostics(
   config: AetherConfig,
   timeoutMs: number,
 ): Promise<ValidationError[]> {
+  const workspaceJava = await resolveWorkspaceJavaHome(workspaceRoot);
   const launcher = await findLauncherJar(config.jdtls?.home ?? "");
-  const javaPath = config.jdtls?.java_path ?? "java";
+  const javaPath = resolveJdtlsProcessJavaPath(config, workspaceJava);
   const dataDir =
     config.jdtls?.workspace_data_dir ??
     join(config.jdtls?.home ?? "", "data", "aether-workspace");
@@ -154,9 +159,18 @@ async function collectJdtDiagnostics(
     rootUri,
     capabilities: {},
     workspaceFolders: [{ uri: rootUri, name: "aether-workspace" }],
+    initializationOptions: {
+      settings: buildJdtlsWorkspaceSettings(workspaceJava),
+    },
   });
 
   await connection.sendNotification("initialized", {});
+
+  const gradleImportDelayMs =
+    config.validation?.lsp_gradle_import_delay_ms ?? (workspaceJava ? 3_000 : 0);
+  if (gradleImportDelayMs > 0) {
+    await delay(gradleImportDelayMs);
+  }
 
   for (const file of javaFiles) {
     const absolutePath = join(workspaceRoot, file.path);
@@ -231,4 +245,43 @@ function delay(ms: number): Promise<void> {
   return new Promise((resolve) => {
     setTimeout(resolve, ms);
   });
+}
+
+function resolveJdtlsProcessJavaPath(
+  config: AetherConfig,
+  workspaceJava: ResolvedWorkspaceJava | null,
+): string {
+  const configuredJavaPath = config.jdtls?.java_path ?? "java";
+  if (!workspaceJava || workspaceJava.version < 21) {
+    return configuredJavaPath;
+  }
+
+  const workspaceJavaBinary = join(
+    workspaceJava.home,
+    "bin",
+    process.platform === "win32" ? "java.exe" : "java",
+  );
+  return workspaceJavaBinary;
+}
+
+function buildJdtlsWorkspaceSettings(
+  workspaceJava: ResolvedWorkspaceJava | null,
+): Record<string, unknown> {
+  const settings: Record<string, unknown> = {
+    "java.import.gradle.enabled": true,
+    "java.import.gradle.wrapper.enabled": true,
+    "java.configuration.updateBuildConfiguration": "automatic",
+  };
+
+  if (workspaceJava) {
+    settings["java.configuration.runtimes"] = [
+      {
+        name: `JavaSE-${workspaceJava.version}`,
+        path: workspaceJava.home,
+        default: true,
+      },
+    ];
+  }
+
+  return settings;
 }

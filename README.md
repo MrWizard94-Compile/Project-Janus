@@ -4,7 +4,7 @@ Dual-AI development platform (**Aether**) — Claude orchestrates, Grok executes
 
 ## Status
 
-Phase 0 (Foundation) — validation kernel, MCP server, workload manager, and JDT.LS bootstrap landed.
+Phase 0 (Foundation) — validation kernel, MCP server, workload worktrees, Gradle JDK toolchain for JDT.LS, and FramedBlocks E2E proof landed.
 
 ## Requirements
 
@@ -19,6 +19,7 @@ pnpm install
 pnpm build
 pnpm test
 pnpm e2e:typescript
+pnpm e2e:framedblocks   # requires `aether workload clone framedblocks` + JDT.LS setup
 ```
 
 ## CLI

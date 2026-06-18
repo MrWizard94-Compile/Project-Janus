@@ -1,0 +1,28 @@
+{
+  "parent_id": "REPLACE_WITH_PARENT_TASK_ID",
+  "assignee": "grok",
+  "workload": "framedblocks",
+  "context_refs": [
+    "arch:framedblocks-mixin-pattern",
+    "doc:handoff-protocol",
+    "ref:validation-rules",
+    "ref:neoforged"
+  ],
+  "validation_profile": "neoforge-mixin-v1",
+  "spec": {
+    "objective": "Baseline MixinStairBlock: verify MixinExtras @WrapOperation hooks for FramedDoubleStairsBlock waterlogging (document-as-is; fix M006 raw-type hits only if required to pass gate)",
+    "constraints": [
+      "No behavior change",
+      "Preserve @Mixin(StairBlock.class) target and MixinExtras injection points",
+      "Single file patch only"
+    ],
+    "files_in_scope": [
+      "src/main/java/io/github/xfacthd/framedblocks/mixin/MixinStairBlock.java"
+    ],
+    "acceptance_criteria": [
+      "Passes neoforge-mixin-v1 validation",
+      "gradlew compileJava exits 0 in workload worktree",
+      "Patch applied and task accepted"
+    ]
+  }
+}

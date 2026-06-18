@@ -47,6 +47,7 @@ export const TaskSchema = z.object({
   id: z.string().min(1),
   parent_id: z.string().nullable(),
   worktree: z.string().nullable(),
+  workload: z.string().nullable().default(null),
   status: TaskStatusSchema,
   assignee: AssigneeSchema.nullable(),
   context_refs: z.array(z.string()),
@@ -63,6 +64,7 @@ export type Task = z.infer<typeof TaskSchema>;
 export const CreateTaskInputSchema = z.object({
   parent_id: z.string().nullable().optional(),
   worktree: z.string().nullable().optional(),
+  workload: z.string().nullable().optional(),
   assignee: AssigneeSchema.nullable().optional(),
   context_refs: z.array(z.string()).default([]),
   spec: TaskSpecSchema,

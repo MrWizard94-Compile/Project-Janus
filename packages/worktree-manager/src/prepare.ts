@@ -12,6 +12,26 @@ export interface PrepareResult {
 export async function prepareWorktreeDependencies(
   workspaceRoot: string,
 ): Promise<PrepareResult> {
+  const gradleWrapper = await findGradleWrapper(workspaceRoot);
+  if (gradleWrapper) {
+    const command = `${gradleWrapper} compileJava`;
+    const result = await runShellCommand(workspaceRoot, command, 600_000);
+
+    if (result.exitCode !== 0) {
+      const detail = result.stderr.trim() || result.stdout.trim();
+      throw new Error(
+        `Worktree prepare failed on "${command}" (exit ${result.exitCode}): ${detail}`,
+      );
+    }
+
+    return {
+      workspace_root: workspaceRoot,
+      commands: [command],
+      exit_code: result.exitCode,
+      skipped: false,
+    };
+  }
+
   const packageJsonPath = join(workspaceRoot, "package.json");
 
   try {
@@ -48,13 +68,34 @@ export async function prepareWorktreeDependencies(
   };
 }
 
+async function findGradleWrapper(workspaceRoot: string): Promise<string | null> {
+  const windowsWrapper = join(workspaceRoot, "gradlew.bat");
+  const unixWrapper = join(workspaceRoot, "gradlew");
+
+  try {
+    await access(windowsWrapper);
+    return "gradlew.bat";
+  } catch {
+    try {
+      await access(unixWrapper);
+      return "./gradlew";
+    } catch {
+      return null;
+    }
+  }
+}
+
 interface CommandResult {
   exitCode: number;
   stdout: string;
   stderr: string;
 }
 
-async function runShellCommand(cwd: string, command: string): Promise<CommandResult> {
+async function runShellCommand(
+  cwd: string,
+  command: string,
+  timeoutMs = 300_000,
+): Promise<CommandResult> {
   return new Promise((resolve, reject) => {
     const child = spawn(command, {
       cwd,
@@ -64,6 +105,12 @@ async function runShellCommand(cwd: string, command: string): Promise<CommandRes
 
     let stdout = "";
     let stderr = "";
+    let timedOut = false;
+
+    const timer = setTimeout(() => {
+      timedOut = true;
+      child.kill("SIGTERM");
+    }, timeoutMs);
 
     child.stdout.on("data", (chunk: Buffer | string) => {
       stdout += chunk.toString();
@@ -73,6 +120,11 @@ async function runShellCommand(cwd: string, command: string): Promise<CommandRes
     });
     child.on("error", reject);
     child.on("close", (code) => {
+      clearTimeout(timer);
+      if (timedOut) {
+        reject(new Error(`Command timed out after ${timeoutMs}ms: ${command}`));
+        return;
+      }
       resolve({
         exitCode: code ?? 1,
         stdout,

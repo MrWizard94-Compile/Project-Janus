@@ -43,6 +43,13 @@ htmlcov/
 .worktrees/
 .aether/
 .tools/
+
+# Cloned workload repositories (use `aether workload clone`)
+workloads/*/repo/
+
+# Local agent/session artifacts
+agent-tools/
+terminals/
 *.sqlite
 *.sqlite-journal
 

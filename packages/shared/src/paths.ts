@@ -62,3 +62,20 @@ export function resolveWorkloadsDir(repoRoot: string): string {
 export function resolveWorkloadDir(repoRoot: string, workloadId: string): string {
   return join(resolveWorkloadsDir(repoRoot), workloadId);
 }
+
+export function resolveWorkloadRepoPath(
+  repoRoot: string,
+  workloadId: string,
+  clonePath = "repo",
+): string {
+  return join(resolveWorkloadDir(repoRoot, workloadId), clonePath);
+}
+
+export function resolveWorkloadWorktreePath(
+  repoRoot: string,
+  workloadId: string,
+  worktreeName: string,
+  clonePath = "repo",
+): string {
+  return join(resolveWorkloadRepoPath(repoRoot, workloadId, clonePath), WORKTREES_DIR, worktreeName);
+}
