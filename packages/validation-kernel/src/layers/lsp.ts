@@ -1,5 +1,6 @@
-import { spawn } from "node:child_process";
-import { readdir } from "node:fs/promises";
+import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
+import { mkdtemp, readdir, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import type { AetherConfig, PatchProposal, ValidationError } from "@aether/shared";
@@ -90,9 +91,7 @@ async function collectJdtDiagnostics(
   const workspaceJava = await resolveWorkspaceJavaHome(workspaceRoot);
   const launcher = await findLauncherJar(config.jdtls?.home ?? "");
   const javaPath = resolveJdtlsProcessJavaPath(config, workspaceJava);
-  const dataDir =
-    config.jdtls?.workspace_data_dir ??
-    join(config.jdtls?.home ?? "", "data", "aether-workspace");
+  const dataDir = await mkdtemp(join(tmpdir(), "aether-jdtls-"));
 
   const configDir = resolveJdtlsConfigDir(config.jdtls?.home ?? "");
   const args = [
@@ -113,8 +112,16 @@ async function collectJdtDiagnostics(
   });
 
   if (!child.stdin || !child.stdout) {
+    await rm(dataDir, { recursive: true, force: true });
     throw new Error("Failed to create JDT.LS stdio pipes");
   }
+
+  let stderr = "";
+  child.stderr.on("data", (chunk: Buffer | string) => {
+    stderr += chunk.toString();
+  });
+
+  const exitPromise = watchJdtlsExit(child);
 
   const reader = new StreamMessageReader(child.stdout);
   const writer = new StreamMessageWriter(child.stdin);
@@ -151,53 +158,91 @@ async function collectJdtDiagnostics(
     },
   );
 
-  connection.listen();
+  try {
+    connection.listen();
 
-  const rootUri = pathToFileURL(workspaceRoot).toString();
-  await connection.sendRequest("initialize", {
-    processId: process.pid,
-    rootUri,
-    capabilities: {},
-    workspaceFolders: [{ uri: rootUri, name: "aether-workspace" }],
-    initializationOptions: {
-      settings: buildJdtlsWorkspaceSettings(workspaceJava),
-    },
-  });
+    const rootUri = pathToFileURL(workspaceRoot).toString();
+    await Promise.race([
+      connection.sendRequest("initialize", {
+        processId: process.pid,
+        rootUri,
+        capabilities: {},
+        workspaceFolders: [{ uri: rootUri, name: "aether-workspace" }],
+        initializationOptions: {
+          settings: buildJdtlsWorkspaceSettings(workspaceJava),
+        },
+      }),
+      exitPromise,
+    ]);
 
-  await connection.sendNotification("initialized", {});
+    await connection.sendNotification("initialized", {});
 
-  const gradleImportDelayMs =
-    config.validation?.lsp_gradle_import_delay_ms ?? (workspaceJava ? 3_000 : 0);
-  if (gradleImportDelayMs > 0) {
-    await delay(gradleImportDelayMs);
+    const gradleImportDelayMs =
+      config.validation?.lsp_gradle_import_delay_ms ?? (workspaceJava ? 3_000 : 0);
+    if (gradleImportDelayMs > 0) {
+      await delay(gradleImportDelayMs);
+    }
+
+    for (const file of javaFiles) {
+      const absolutePath = join(workspaceRoot, file.path);
+      const document = TextDocument.create(
+        pathToFileURL(absolutePath).toString(),
+        "java",
+        1,
+        file.content,
+      );
+
+      await connection.sendNotification("textDocument/didOpen", {
+        textDocument: {
+          uri: document.uri,
+          languageId: document.languageId,
+          version: document.version,
+          text: document.getText(),
+        },
+      });
+    }
+
+    await waitForDiagnostics(pendingUris, diagnosticsByUri, timeoutMs);
+
+    await connection.sendRequest("shutdown", null);
+    await connection.sendNotification("exit", null);
+    child.kill("SIGTERM");
+
+    return [...diagnosticsByUri.values()].flat();
+  } catch (error) {
+    child.kill("SIGTERM");
+    if (error instanceof JdtlsProcessExitError) {
+      throw new Error(
+        `JDT.LS exited with code ${error.exitCode ?? "unknown"}${stderr.trim() ? `: ${trimOutput(stderr)}` : ""}`,
+      );
+    }
+    throw error;
+  } finally {
+    await rm(dataDir, { recursive: true, force: true });
   }
+}
 
-  for (const file of javaFiles) {
-    const absolutePath = join(workspaceRoot, file.path);
-    const document = TextDocument.create(
-      pathToFileURL(absolutePath).toString(),
-      "java",
-      1,
-      file.content,
-    );
+class JdtlsProcessExitError extends Error {
+  readonly exitCode: number | null;
 
-    await connection.sendNotification("textDocument/didOpen", {
-      textDocument: {
-        uri: document.uri,
-        languageId: document.languageId,
-        version: document.version,
-        text: document.getText(),
-      },
+  constructor(exitCode: number | null) {
+    super(`JDT.LS process exited with code ${exitCode ?? "unknown"}`);
+    this.name = "JdtlsProcessExitError";
+    this.exitCode = exitCode;
+  }
+}
+
+function watchJdtlsExit(child: ChildProcessWithoutNullStreams): Promise<never> {
+  return new Promise((_, reject) => {
+    child.once("exit", (code) => {
+      reject(new JdtlsProcessExitError(code));
     });
-  }
+  });
+}
 
-  await waitForDiagnostics(pendingUris, diagnosticsByUri, timeoutMs);
-
-  await connection.sendRequest("shutdown", null);
-  await connection.sendNotification("exit", null);
-  child.kill("SIGTERM");
-
-  return [...diagnosticsByUri.values()].flat();
+function trimOutput(output: string): string {
+  const lines = output.split(/\r?\n/).filter((line) => line.trim().length > 0);
+  return lines.slice(-4).join("\n");
 }
 
 async function waitForDiagnostics(

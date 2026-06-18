@@ -103,15 +103,18 @@ export function runNeoForgeMixinRules(context: RuleContext): ValidationError[] {
       });
     }
 
-    const hasNullable = analysis.nullableAnnotations.some((entry) => entry.kind === "Nullable");
+    const hasNullableOnReturn = analysis.nullableAnnotations.some(
+      (entry) => entry.kind === "Nullable" && entry.site === "return",
+    );
     const hasNonnull = analysis.nullableAnnotations.some((entry) => entry.kind === "Nonnull");
-    if (hasNullable && !hasNonnull) {
+    if (hasNullableOnReturn && !hasNonnull) {
       errors.push({
         layer: "rules",
         rule: "T001",
         file: file.path,
-        message: "@Nullable appears without any matching @Nonnull usage in the same file",
-        suggestion: "Pair nullable annotations with explicit non-null contracts where required",
+        message:
+          "@Nullable on a method return appears without any matching @Nonnull usage in the same file",
+        suggestion: "Pair nullable return annotations with explicit non-null contracts where required",
       });
     }
   }

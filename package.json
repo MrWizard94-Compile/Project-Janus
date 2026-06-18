@@ -19,7 +19,8 @@
     "typecheck": "pnpm -r run typecheck",
     "aether": "pnpm --filter @aether/cli exec aether",
     "e2e:typescript": "node scripts/e2e-typescript.mjs",
-    "e2e:framedblocks": "node scripts/e2e-framedblocks.mjs"
+    "e2e:framedblocks": "node scripts/e2e-framedblocks.mjs",
+    "e2e:framedblocks-batch01": "node scripts/e2e-framedblocks-batch01.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.15.21",

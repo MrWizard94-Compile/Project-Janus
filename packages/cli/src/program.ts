@@ -176,7 +176,7 @@ export function buildProgram(): Command {
         await new WorktreeManager(repoRoot).destroy(options.task);
       }
 
-      const updated = await queue.setWorktree(options.task, null, null);
+      const updated = await queue.setWorktree(options.task, null);
       console.log(JSON.stringify(updated, null, 2));
     });
 
@@ -295,7 +295,7 @@ export function buildProgram(): Command {
       const queue = new TaskQueue(repoRoot);
 
       await manager.destroyWorktree(id, options.task);
-      const updated = await queue.setWorktree(options.task, null, null);
+      const updated = await queue.setWorktree(options.task, null);
       console.log(JSON.stringify(updated, null, 2));
     });
 

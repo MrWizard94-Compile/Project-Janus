@@ -19,8 +19,11 @@ pnpm install
 pnpm build
 pnpm test
 pnpm e2e:typescript
-pnpm e2e:framedblocks   # requires `aether workload clone framedblocks` + JDT.LS setup
+pnpm e2e:framedblocks           # single-child smoke (child 03)
+pnpm e2e:framedblocks-batch01   # full batch-01: all five mixin children
 ```
+
+FramedBlocks E2E requires `aether workload clone framedblocks` and `aether setup jdtls`.
 
 ## CLI
 
